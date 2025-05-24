@@ -50,11 +50,10 @@ By automating the billing process and ensuring only scanned items are added to t
 - Voice assistance and multilingual support
 - Touchscreen upgrade and data analytics dashboard for retailers
 
-## 📁 Folder Structure
-📂 Smart-Shopping-Trolley
-├── 📁 hardware-design
+## 📁 Folder Structure Smart-Shopping-Trolley
+ hardware-design
 ![image](https://github.com/user-attachments/assets/e99e4ff2-0b0b-473e-ae7b-bddf28b1c0d2)
-├── 📁 Snapshots
+ Snapshots
 ![image](https://github.com/user-attachments/assets/2517bf04-4631-4743-bfcc-8b89875516d1)
 ![image](https://github.com/user-attachments/assets/1534e492-975c-4a82-88a6-28a79f7f07aa)
 ![image](https://github.com/user-attachments/assets/8876b7d6-5198-4a65-be1d-9509d2b38dd5)
