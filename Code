@@ -1,0 +1,111 @@
+#include <SPI.h>
+#include <MFRC522.h>
+#include <Wire.h>
+#include <LiquidCrystal_I2C.h>
+
+// RFID
+#define SS_PIN 10
+#define RST_PIN 9
+
+// Pins
+#define BUZZER_PIN 8
+#define LDR_PIN A0
+#define LASER_PIN 7
+
+#define LDR_THRESHOLD 300  // Adjust as per setup
+
+MFRC522 rfid(SS_PIN, RST_PIN);
+LiquidCrystal_I2C lcd(0x27, 16, 2);
+
+struct Item {
+  byte uid[4];
+  const char* name;
+  int price;
+};
+
+Item items[] = {
+  {{0xB5, 0xB4, 0x8B, 0x3F}, "Milk", 40},
+  {{0xB8, 0x89, 0xDC, 0x12}, "Bread", 30},
+  {{0x93, 0x60, 0xDB, 0xDA}, "Juice", 50}
+};
+
+int totalAmount = 0;
+unsigned long buzzerBlockUntil = 0;
+
+void setup() {
+  Serial.begin(9600);
+  SPI.begin();
+  rfid.PCD_Init();
+  lcd.init();
+  lcd.backlight();
+
+  pinMode(BUZZER_PIN, OUTPUT);
+  pinMode(LASER_PIN, OUTPUT);
+  digitalWrite(BUZZER_PIN, LOW);
+  digitalWrite(LASER_PIN, HIGH); // Laser ON
+
+  lcd.setCursor(0, 0);
+  lcd.print("Smart Trolley");
+  delay(2000);
+  lcd.clear();
+}
+
+void loop() {
+  // ----- RFID CHECK -----
+  if (rfid.PICC_IsNewCardPresent() && rfid.PICC_ReadCardSerial()) {
+    Serial.print("Card UID:");
+    for (byte i = 0; i < rfid.uid.size; i++) {
+      Serial.print(" ");
+      Serial.print(rfid.uid.uidByte[i], HEX);
+    }
+    Serial.println();
+
+    bool found = false;
+
+    for (Item item : items) {
+      if (memcmp(rfid.uid.uidByte, item.uid, 4) == 0) {
+        totalAmount += item.price;
+        lcd.clear();
+        lcd.setCursor(0, 0);
+        lcd.print("Product: ");
+        lcd.print(item.name);
+        lcd.setCursor(0, 1);
+        lcd.print("Total: Rs ");
+        lcd.print(totalAmount);
+        found = true;
+        buzzerBlockUntil = millis() + 5000; // 5 sec block buzzer
+        break;
+      }
+    }
+
+    if (!found) {
+      lcd.clear();
+      lcd.setCursor(0, 0);
+      lcd.print("Unknown Product");
+    }
+
+    rfid.PICC_HaltA();
+    delay(1500);
+  }
+
+  // ----- LDR CHECK -----
+  int ldrValue = analogRead(LDR_PIN);
+  Serial.print("LDR: ");
+  Serial.println(ldrValue);
+
+  bool laserDetected = ldrValue > LDR_THRESHOLD;
+
+  if (!laserDetected) {
+    // Laser interrupted
+    if (millis() > buzzerBlockUntil) {
+      digitalWrite(BUZZER_PIN, HIGH);
+    } else {
+      digitalWrite(BUZZER_PIN, LOW);
+    }
+  } else {
+    // Laser hitting LDR
+    digitalWrite(BUZZER_PIN, LOW);
+  }
+
+  delay(100);
+}
